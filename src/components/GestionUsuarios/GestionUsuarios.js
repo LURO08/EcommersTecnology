@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { getAuth, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import './GestionUsuarios.css';
 
 const auth = getAuth();
@@ -11,8 +11,6 @@ function UserList() {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const db = getFirestore();
-    const [isReauthenticationRequired, setIsReauthenticationRequired] = useState(false);
-    
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -43,43 +41,16 @@ function UserList() {
     }, [navigate, db]);
 
     const handleDeleteAccount = async (uid) => {
-        if (isReauthenticationRequired) {
-            if (window.confirm("Are you sure you want to delete this user?")) {
-                try {
-                    const userToDelete = auth.currentUser;
-    
-                    if (userToDelete && userToDelete.uid === uid) {
-                        // Eliminar el documento del usuario en Firestore
-                        await deleteDoc(doc(db, "users", uid));
-                        // Eliminar la cuenta de autenticación
-                        await deleteUser(userToDelete);
-                        setUsers(prevUsers => prevUsers.filter(user => user.id !== uid)); // Usamos prevUsers para filtrar
-                        alert('User account deleted successfully');
-                        auth.signOut();
-                    } else {
-                        alert('No user logged in or wrong user.');
-                    }
-                } catch (error) {
-                    console.error("Error deleting user account: ", error);
-                    alert('Error deleting user account.');
-                }
+        if (window.confirm("Are you sure you want to delete this user?")) {
+            try {
+                // Eliminar el documento del usuario en Firestore
+                await deleteDoc(doc(db, "users", uid));
+                setUsers(users.filter(user => user.id !== uid)); // Aquí es donde deberías filtrar por id en lugar de uid
+                alert('User data deleted successfully');
+            } catch (error) {
+                console.error("Error deleting user data: ", error);
+                alert('Error deleting user data.');
             }
-        } else {
-            setIsReauthenticationRequired(true);
-        }
-    };
-    
-
-    const handleReauthenticate = async (password, uid) => {
-        const user = auth.currentUser;
-        const credential = EmailAuthProvider.credential(user.email, password);
-        try {
-            await reauthenticateWithCredential(user, credential);
-            setIsReauthenticationRequired(false);
-            handleDeleteAccount(uid);
-        } catch (error) {
-            console.error("Error reauthenticating: ", error);
-            alert('Invalid password. Please try again.');
         }
     };
 
@@ -108,7 +79,7 @@ function UserList() {
                                 <td>{user.rol}</td>
                                 <td>
                                     <button onClick={() => navigate(`/edit-user/${user.id}`)}>Modificar</button>
-                                    <button onClick={() => setIsReauthenticationRequired(true)}>Eliminar</button>
+                                    <button onClick={() => handleDeleteAccount(user.id)}>Eliminar</button>
                                 </td>
                             </tr>
                         )) : (
@@ -118,32 +89,6 @@ function UserList() {
                         )}
                     </tbody>
                 </table>
-            </div>
-            {isReauthenticationRequired && <ReauthenticationForm onCancel={() => setIsReauthenticationRequired(false)} onReauthenticate={(password) => handleReauthenticate(password)} />}
-        </div>
-    );
-}
-
-function ReauthenticationForm({ onCancel, onReauthenticate }) {
-    const [password, setPassword] = useState('');
-
-    const handleReauthenticate = () => {
-        onReauthenticate(password);
-    };
-
-    return (
-        <div>
-            <h2>Reauthentication Required</h2>
-            <label>Password:</label>
-            <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-            />
-            <div>
-                <button onClick={handleReauthenticate}>Confirm</button>
-                <button onClick={onCancel}>Cancel</button>
             </div>
         </div>
     );
