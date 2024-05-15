@@ -98,7 +98,7 @@ function Header() {
                 )}
 
                 <a onClick={toggleCart}>
-                    <img src="/img/carritoCompras2.png" alt="Carrito" width={25} height={25} />
+                    <img src="img/carritoCompras2.png" alt="Carrito" width={25} height={25} />
                     <span>{totalItemsInCart}</span>
                 </a>
 
