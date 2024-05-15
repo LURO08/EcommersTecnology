@@ -36,11 +36,11 @@ function SignUp() {
                 email: email,
                 rol: rol
             });
-            console.log('Usuario registrado:');
+            console.log('Usuario registrado correctamente');
             navigate('/home');
         } catch (error) {
             setError(error.message);
-            console.error('Error signing up:', error);
+            console.error('Error al registrarse:', error);
         }
     };
 

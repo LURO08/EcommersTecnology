@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../../firebase-config';
-import { collection, getDocs } from 'firebase/firestore';
-import { getAuth, deleteUser, updatePassword } from "firebase/auth"; // Importamos updatePassword
+import { getFirestore, collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { getAuth, deleteUser, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import './GestionUsuarios.css';
 
 const auth = getAuth();
@@ -11,6 +10,9 @@ function UserList() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const db = getFirestore();
+    const [isReauthenticationRequired, setIsReauthenticationRequired] = useState(false);
+    
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -38,39 +40,46 @@ function UserList() {
         fetchUsers();
 
         return () => unsubscribe();
-    }, [navigate]);
+    }, [navigate, db]);
 
     const handleDeleteAccount = async (uid) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
-            try {
-                const userToDelete = auth.currentUser;
-                if (userToDelete && userToDelete.uid === uid) {
-                    await deleteUser(userToDelete);
-                    setUsers(users.filter(user => user.uid !== uid));
-                    alert('Cuenta eliminada con éxito');
-                    // Optionally sign out the user
-                    auth.signOut();
-                } else {
-                    alert('No user logged in or wrong user.');
+        if (isReauthenticationRequired) {
+            if (window.confirm("Are you sure you want to delete this user?")) {
+                try {
+                    const userToDelete = auth.currentUser;
+    
+                    if (userToDelete && userToDelete.uid === uid) {
+                        // Eliminar el documento del usuario en Firestore
+                        await deleteDoc(doc(db, "users", uid));
+                        // Eliminar la cuenta de autenticación
+                        await deleteUser(userToDelete);
+                        setUsers(prevUsers => prevUsers.filter(user => user.id !== uid)); // Usamos prevUsers para filtrar
+                        alert('User account deleted successfully');
+                        auth.signOut();
+                    } else {
+                        alert('No user logged in or wrong user.');
+                    }
+                } catch (error) {
+                    console.error("Error deleting user account: ", error);
+                    alert('Error deleting user account.');
                 }
-            } catch (error) {
-                console.error("Error deleting the account: ", error);
-                alert('Error deleting the account. Make sure the user has recently logged in.');
             }
+        } else {
+            setIsReauthenticationRequired(true);
         }
     };
+    
 
-    const handleChangePassword = async (uid) => {
+    const handleReauthenticate = async (password, uid) => {
         const user = auth.currentUser;
-        const newPassword = prompt("Enter the new password:");
-        if (user && user.uid === uid && newPassword) {
-            try {
-                await updatePassword(user, newPassword);
-                alert('Contraseña cambiada exitosamente');
-            } catch (error) {
-                console.error("Error changing password: ", error);
-                alert('Error changing password. Please try again later.');
-            }
+        const credential = EmailAuthProvider.credential(user.email, password);
+        try {
+            await reauthenticateWithCredential(user, credential);
+            setIsReauthenticationRequired(false);
+            handleDeleteAccount(uid);
+        } catch (error) {
+            console.error("Error reauthenticating: ", error);
+            alert('Invalid password. Please try again.');
         }
     };
 
@@ -99,8 +108,7 @@ function UserList() {
                                 <td>{user.rol}</td>
                                 <td>
                                     <button onClick={() => navigate(`/edit-user/${user.id}`)}>Modificar</button>
-                                    <button onClick={() => handleDeleteAccount(user.uid)}>Eliminar</button>
-                                    <button onClick={() => handleChangePassword(user.uid)}>Cambiar Contraseña</button> {/* Agregamos el botón para cambiar contraseña */}
+                                    <button onClick={() => setIsReauthenticationRequired(true)}>Eliminar</button>
                                 </td>
                             </tr>
                         )) : (
@@ -110,6 +118,32 @@ function UserList() {
                         )}
                     </tbody>
                 </table>
+            </div>
+            {isReauthenticationRequired && <ReauthenticationForm onCancel={() => setIsReauthenticationRequired(false)} onReauthenticate={(password) => handleReauthenticate(password)} />}
+        </div>
+    );
+}
+
+function ReauthenticationForm({ onCancel, onReauthenticate }) {
+    const [password, setPassword] = useState('');
+
+    const handleReauthenticate = () => {
+        onReauthenticate(password);
+    };
+
+    return (
+        <div>
+            <h2>Reauthentication Required</h2>
+            <label>Password:</label>
+            <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+            />
+            <div>
+                <button onClick={handleReauthenticate}>Confirm</button>
+                <button onClick={onCancel}>Cancel</button>
             </div>
         </div>
     );
