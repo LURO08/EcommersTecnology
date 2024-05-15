@@ -40,7 +40,6 @@ function App() {
             <Route path="/edit/:productId" element={<EditProductForm />} />
             <Route path="/edit-user/:id" element={<ModifyUsers />} />
 
-
             <Route path='/estadisticas' element={<Estadisticas/>}/>
             <Route path='/Ventas' element={<Ventas/>}/>
           </Routes>
