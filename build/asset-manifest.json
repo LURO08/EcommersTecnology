@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/EcommersTecnology/build/static/css/main.928a2466.css",
+    "main.js": "/EcommersTecnology/build/static/js/main.9624cf7d.js",
+    "static/js/213.e672fa8b.chunk.js": "/EcommersTecnology/build/static/js/213.e672fa8b.chunk.js",
+    "static/js/455.78a41ad3.chunk.js": "/EcommersTecnology/build/static/js/455.78a41ad3.chunk.js",
+    "index.html": "/EcommersTecnology/build/index.html",
+    "main.928a2466.css.map": "/EcommersTecnology/build/static/css/main.928a2466.css.map",
+    "main.9624cf7d.js.map": "/EcommersTecnology/build/static/js/main.9624cf7d.js.map",
+    "213.e672fa8b.chunk.js.map": "/EcommersTecnology/build/static/js/213.e672fa8b.chunk.js.map",
+    "455.78a41ad3.chunk.js.map": "/EcommersTecnology/build/static/js/455.78a41ad3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.928a2466.css",
+    "static/js/main.9624cf7d.js"
+  ]
+}
