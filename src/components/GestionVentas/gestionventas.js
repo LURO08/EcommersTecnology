@@ -133,7 +133,7 @@ function SalesList() {
                                 <td>{new Date(sale.timestamp).toLocaleString()}</td>
                                 <td>
                                     <button onClick={() => handleShowDetails(sale)}>Ver Detalles</button>
-                                </td>A2
+                                </td>
                             </tr>
                         ))}
                     </tbody>
